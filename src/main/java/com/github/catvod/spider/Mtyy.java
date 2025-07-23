@@ -11,6 +11,7 @@ import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Util;
+import com.github.catvod.utils.VideoUrlParser;
 import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -196,24 +197,14 @@ public class Mtyy extends Spider {
         String url = player.getString("url");
         String thumb = player.getString("vod_pic_thumb");
         String urlNext = player.getString("url_next");
-        String playerContent = OkHttp.string(String.format(playUrl, url, thumb), getHeader());
+        String playerContent = VideoUrlParser.getVideoUrl(String.format(playUrl, url, thumb), getHeader());
+        System.out.println(playerContent);
         url = Util.findByRegex("(https?:\\/\\/[\\w\\.-]+(?:\\/[\\w\\.-]*)*\\.m3u8(?:\\?[^\\s]*)?)", playerContent, 0);
-
+        System.out.println(url);
         SpiderDebug.log("++++++++++++麦田-playerContent" + Json.toJson(url));
-//        if (player.getInt("encrypt") == 1) {
-//            url = URLDecoder.decode(url);
-//            urlNext = URLDecoder.decode(urlNext);
-//        } else if (player.getInt("encrypt") == 2) {
-//            url = URLDecoder.decode(Base64.decodeStr(url));
-//            urlNext = URLDecoder.decode(Base64.decodeStr(urlNext));
-//        }
-//
-//        String iframeUrl = this.siteUrl + "/static/player/ffzy.php?url=" + url + "&jump=" + urlNext + "&thumb=" + player.getString("vod_pic_thumb") + "&id=" + player.getString("id") + "&nid=" + player.getInt("nid");
-//        String iframeContent = OkHttp.string(iframeUrl);
-//        String encodeUrl = Utils.getVar(iframeContent, "urls");
-//        String realUrl = getVideoInfo(encodeUrl);
         return Result.get().url(url).header(getHeader()).string();
     }
+
 
     String getVideoInfo(String _0x38afx2) {
         String string = _0x38afx2.substring(8);

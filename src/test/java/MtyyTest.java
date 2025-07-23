@@ -42,7 +42,7 @@ public class MtyyTest {
     @Test
     public void detailTest() throws Exception {
 
-        String detail = douban.detailContent(Lists.newArrayList("https://mtyy1.com/voddetail/8529.html"));
+        String detail = douban.detailContent(Lists.newArrayList("https://mtyy1.com/vodplay/190501-5-1.html"));
         System.out.println(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(detail)));
 
     }
@@ -50,7 +50,7 @@ public class MtyyTest {
     @Test
     public void playerTest() throws Exception {
 
-        String palyer = douban.playerContent(null, "https://mtyy1.com/vodplay/8529-1-8.html", null);
+        String palyer = douban.playerContent(null, "https://mtyy1.com/vodplay/190501-5-1.html", null);
         System.out.println(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(palyer)));
 
 

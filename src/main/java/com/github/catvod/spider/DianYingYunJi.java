@@ -4,13 +4,13 @@ package com.github.catvod.spider;
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Result;
 import com.github.catvod.bean.Vod;
-import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Util;
+import com.github.catvod.utils.HttpFetcher;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,15 +32,50 @@ public class DianYingYunJi extends Cloud {
     private final String siteUrl = "https://dyyjpro.com";
 
 
-    private Map<String, String> getHeader() {
-        Map<String, String> header = new HashMap<>();
-        header.put("User-Agent", Util.CHROME);
-        return header;
+    private HashMap<String, String> getHeaders() {
+        HashMap<String, String> headers = new HashMap<>();
+
+        headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0");
+        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        headers.put("Accept-Encoding", "gzip, deflate, br, zstd");
+        headers.put("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+        headers.put("Cache-Control", "max-age=0");
+        headers.put("Referer", "https://dm84.net/p/5088-1-92.html");
+        headers.put("Priority", "u=0, i");
+        headers.put("Sec-Ch-Ua", "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"");
+        headers.put("Sec-Ch-Ua-Mobile", "?0");
+        headers.put("Sec-Ch-Ua-Platform", "\"Windows\"");
+        headers.put("Sec-Fetch-Dest", "document");
+        headers.put("Sec-Fetch-Mode", "navigate");
+        headers.put("Sec-Fetch-Site", "none");
+        headers.put("Sec-Fetch-User", "?1");
+        headers.put("Sec-Gpc", "1");
+        headers.put("Upgrade-Insecure-Requests", "1");
+
+        // 如果你有 Cookie，也可以加上
+//         headers.put("Cookie","_ga=GA1.1.1429907492.1753201288; notice_show=1; history=%5B%7B%22name%22%3A%22%u6C5F%u601D%u5148%u751F%22%2C%22pic%22%3A%22%22%2C%22link%22%3A%22/p/5088-1-92.html%22%2C%22part%22%3A%22%u7B2C92%u96C6%22%7D%5D; _ga_2JQYJX8CK4=GS2.1.s1753240824$o2$g0$t1753240824$j60$l0$h0");
+
+        return headers;
     }
 
-    private Map<String, String> getHeaderWithCookie() {
-        Map<String, String> header = new HashMap<>();
-        header.put("User-Agent", Util.CHROME);
+    private HashMap<String, String> getHeaderWithCookie() {
+        HashMap<String, String> header = new HashMap<>();
+        header.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0");
+        header.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        header.put("Accept-Encoding", "gzip, deflate, br, zstd");
+        header.put("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6");
+        header.put("Cache-Control", "max-age=0");
+        header.put("Referer", "https://dm84.net/p/5088-1-92.html");
+        header.put("Priority", "u=0, i");
+        header.put("Sec-Ch-Ua", "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"");
+        header.put("Sec-Ch-Ua-Mobile", "?0");
+        header.put("Sec-Ch-Ua-Platform", "\"Windows\"");
+        header.put("Sec-Fetch-Dest", "document");
+        header.put("Sec-Fetch-Mode", "navigate");
+        header.put("Sec-Fetch-Site", "none");
+        header.put("Sec-Fetch-User", "?1");
+        header.put("Sec-Gpc", "1");
+        header.put("Upgrade-Insecure-Requests", "1");
         header.put("cookie", "esc_search_captcha=1; result=43");
         return header;
     }
@@ -52,9 +87,10 @@ public class DianYingYunJi extends Cloud {
     }
 
     @Override
-    public String homeContent(boolean filter) {
+    public String homeContent(boolean filter) throws IOException {
         List<Class> classes = new ArrayList<>();
-        Document doc = Jsoup.parse(OkHttp.string(siteUrl, getHeader()));
+        Document doc = Jsoup.parse(HttpFetcher.fetchAndDecompress(siteUrl, getHeaders()));
+        System.out.println(doc);
         Elements elements = doc.select(" #header-navbar > li.menu-item > a");
         for (Element e : elements) {
             String url = e.attr("href");
@@ -85,9 +121,9 @@ public class DianYingYunJi extends Cloud {
     }
 
     @Override
-    public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) {
+    public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) throws IOException {
 
-        Document doc = Jsoup.parse(OkHttp.string(String.format("%s/page/%s", tid, pg), getHeader()));
+        Document doc = Jsoup.parse(HttpFetcher.fetchAndDecompress(String.format("%s/page/%s", tid, pg), getHeaders()));
         List<Vod> list = parseVodListFromDoc(doc);
         int total = (Integer.parseInt(pg) + 1) * 19;
         return Result.get().vod(list).page(Integer.parseInt(pg), Integer.parseInt(pg) + 1, 19, total).string();
@@ -97,7 +133,7 @@ public class DianYingYunJi extends Cloud {
     @Override
     public String detailContent(List<String> ids) throws Exception {
         String vodId = ids.get(0);
-        Document doc = Jsoup.parse(OkHttp.string(vodId, getHeader()));
+        Document doc = Jsoup.parse(HttpFetcher.fetchAndDecompress(vodId, getHeaders()));
 
         Vod item = new Vod();
         item.setVodId(vodId);
@@ -143,9 +179,9 @@ public class DianYingYunJi extends Cloud {
         return searchContent(key, pg);
     }
 
-    private String searchContent(String key, String pg) {
+    private String searchContent(String key, String pg) throws IOException {
         String searchURL = siteUrl + String.format("?cat=&s=%s", URLEncoder.encode(key));
-        String html = OkHttp.string(searchURL, getHeaderWithCookie());
+        String html = HttpFetcher.fetchAndDecompress(searchURL, getHeaderWithCookie());
         Document doc = Jsoup.parse(html);
 
         return Result.string(parseVodListFromDoc(doc));

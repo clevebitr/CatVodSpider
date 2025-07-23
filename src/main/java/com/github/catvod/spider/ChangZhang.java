@@ -36,7 +36,7 @@ import java.util.*;
 
 public class ChangZhang extends Spider {
 
-    private final String siteUrl = "https://www.czzyvideo.com/";
+    private final String siteUrl = "https://www.czzy77.com/";
 
     private Map<String, String> getHeader() {
         Map<String, String> header = new HashMap<>();

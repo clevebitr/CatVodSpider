@@ -4,7 +4,8 @@
 
 # 基于
 
-https://github.com/FongMi/CatVodSpider
+https://github.com/FongMi/CatVodSpider  
+https://github.com/Greatwallcorner/CatVodSpider
 
 ## 爬虫来源
 https://github.com/bizhangjie/CatVodSpider

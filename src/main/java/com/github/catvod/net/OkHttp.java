@@ -17,7 +17,7 @@ public class OkHttp {
     public static final String POST = "POST";
     public static final String GET = "GET";
 
-    private OkHttpClient client;
+    private static OkHttpClient client = new OkHttpClient();
     private OkHttpClient shortTimeOutClient;
 
     private static class Loader {
