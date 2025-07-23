@@ -2,7 +2,6 @@ package com.github.catvod.utils;
 
 import com.github.catvod.net.OkHttp;
 import org.json.JSONObject;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
