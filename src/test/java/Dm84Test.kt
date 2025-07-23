@@ -14,6 +14,11 @@ class Dm84Test : TestInterface<Dm84> {
     init {
         t.init()
     }
+    @Test
+    fun TestHTML(){
+        t.TestDM84HTML()
+    }
+
 
     @Test
     override fun homeTest() {
@@ -38,7 +43,7 @@ class Dm84Test : TestInterface<Dm84> {
 
     @Test
     override fun playTest() {
-        val playerContent = t.playerContent("", "/p/5367-1-1.html", Lists.newArrayList())
+        val playerContent = t.playerContent("", "/p/982-1-1.html", Lists.newArrayList())
         println(playerContent)
         AssertUtil.assertResult(playerContent)
     }

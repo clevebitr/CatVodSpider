@@ -13,6 +13,9 @@ plugins {
 }
 
 java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
 }
 group = "org.heatdesert.catvod"
 //version = "1.0"
@@ -41,6 +44,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core:2.3.7")
     implementation("io.ktor:ktor-client-cio:2.3.7")
     implementation(kotlin("stdlib-jdk8"))
+    implementation("com.github.luben:zstd-jni:1.5.7-4")
 
     implementation(compose.foundation)
     implementation(compose.material3)

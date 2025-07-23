@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 public class DaGongRen extends Spider {
 
-    private static final String siteUrl = "https://dagongrenyy.com";
+    private static final String siteUrl = "https://dagongren2.com";
     private static final String cateUrl = siteUrl + "/list/";
     private static final String detailUrl = siteUrl + "/play/";
     private static final String playUrl = siteUrl + "/play/";
@@ -87,14 +87,50 @@ public class DaGongRen extends Spider {
 
     @Override
     public String detailContent(List<String> ids) throws Exception {
+        // 发起网络请求并解析 HTML
         Document doc = Jsoup.parse(OkHttp.string(detailUrl.concat(ids.get(0)), getHeaders()));
+
+        // 提取基础信息
         String name = doc.select("h2.title.margin_0").text();
         String pic = doc.select("div.play_vlist_thumb").get(0).attr("data-original");
-        // 播放源
+
+        // 提取详细信息：类型、地区、年份、简介
+        String type = "";
+        String area = "";
+        String year = "";
+        String description = "";
+
+        // 提取类型、地区、年份
+        Elements dataEls = doc.select("p.data.ms_p.margin_0").select("a");
+        for (Element el : dataEls) {
+            String text = el.text().trim();
+            if (text.isEmpty()) continue;
+
+            Element prev = el.previousElementSibling();
+            if (prev != null) {
+                if (prev.text().contains("类型：")) {
+                    if (!type.isEmpty()) type += ",";
+                    type += text;
+                } else if (prev.text().contains("地区：")) {
+                    area = text;
+                } else if (prev.text().contains("年份：")) {
+                    year = text;
+                }
+            }
+        }
+
+        // 提取剧情简介
+        Element descEl = doc.selectFirst("div.panel.play_content");
+        if (descEl != null) {
+            description = descEl.text().trim();
+        }
+
+        // 提取播放源和播放链接
         Elements tabs = doc.select("li.tab-play");
         Elements list = doc.select("ul.content_playlist");
         StringBuilder PlayFrom = new StringBuilder();
         StringBuilder PlayUrl = new StringBuilder();
+
         for (int i = 0; i < tabs.size(); i++) {
             String tabName = tabs.get(i).text();
             if (PlayFrom.length() > 0) {
@@ -102,6 +138,7 @@ public class DaGongRen extends Spider {
             } else {
                 PlayFrom.append(tabName);
             }
+
             Elements li = list.get(i).select("a");
             StringBuilder liUrl = new StringBuilder();
             for (int i1 = 0; i1 < li.size(); i1++) {
@@ -118,12 +155,19 @@ public class DaGongRen extends Spider {
             }
         }
 
+        // 构造 Vod 对象
         Vod vod = new Vod();
         vod.setVodId(ids.get(0));
         vod.setVodPic(siteUrl + pic);
         vod.setVodName(name);
+        vod.setVodTag(type);        // 新增：设置影片类型
+        vod.setVodArea(area);       // 新增：设置地区
+        vod.setVodYear(year);       // 新增：设置年份
+        vod.setVodContent(description); // 新增：设置简介
         vod.setVodPlayFrom(PlayFrom.toString());
         vod.setVodPlayUrl(PlayUrl.toString());
+
+        // 返回 JSON 字符串
         return Result.string(vod);
     }
 

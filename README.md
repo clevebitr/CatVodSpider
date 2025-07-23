@@ -1,3 +1,7 @@
+# 导入
+基于java jdk11  
+特殊网络环境下使用镜像源
+
 # 基于
 
 https://github.com/FongMi/CatVodSpider
@@ -9,7 +13,7 @@ https://github.com/mymine/CatVodSpider
 
 # 声明
 
-专用于TV-Multiplatform项目, 无法包含安卓相关包，所以在改动中移除了相关代码
+专用于LumenTV Compose项目, 无法包含安卓相关包，所以在改动中移除了相关代码
 
 欢迎PR
 

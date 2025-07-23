@@ -41,15 +41,17 @@ import java.util.concurrent.atomic.AtomicReference
 class BD : Spider() {
 
     override fun init() {
-        val res = OkHttp.newCall("$host$ad", Util.webHeaders(host))
-        if (res.isSuccessful) {
-            val c = res.headers[com.google.common.net.HttpHeaders.SET_COOKIE]
-            val split = c?.split(";")
-            session = if((split?.size ?: 0) > 1) split?.get(0) ?: "" else c ?: ""
-        } else {
-            SpiderDebug.log("Db初始化失败：$res")
+        val response = OkHttp.newCall("$host$ad", Util.webHeaders(host))
+        response.use { res ->
+            if (res.isSuccessful) {
+                val c = res.headers[com.google.common.net.HttpHeaders.SET_COOKIE]
+                val split = c?.split(";")
+                session = if ((split?.size ?: 0) > 1) split?.get(0) ?: "" else c ?: ""
+            } else {
+                SpiderDebug.log("Db初始化失败：$res")
+            }
         }
-        SpiderDebug.log("BD init session:"+ session)
+        SpiderDebug.log("BD init session: $session")
     }
 
     override fun init(extend: String?) {

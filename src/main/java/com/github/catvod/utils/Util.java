@@ -170,6 +170,13 @@ public class Util {
 
     }
 
+    public static byte[] decompressGzip(byte[] compressed) throws IOException {
+        try (java.io.ByteArrayInputStream bis = new java.io.ByteArrayInputStream(compressed);
+             java.util.zip.GZIPInputStream gis = new java.util.zip.GZIPInputStream(bis)) {
+            return gis.readAllBytes();
+        }
+    }
+
     @FunctionalInterface
     public interface CallBack {
         void apply(String val);
