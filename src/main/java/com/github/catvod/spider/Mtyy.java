@@ -49,8 +49,8 @@ public class Mtyy extends Spider {
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         Document doc = Jsoup.parse(OkHttp.string(siteUrl));
-        List<String> typeNames = Arrays.asList("连续剧", "电影", "综艺", "动漫", "短剧", "纪录片");
-        List<String> typeIds = Arrays.asList("1", "2", "3", "4", "5", "6");
+        List<String> typeNames = Arrays.asList("连续剧", "电影", "综艺", "动漫", "短剧");
+        List<String> typeIds = Arrays.asList("2", "1", "3", "4", "26");
         for (int i = 0; i < typeIds.size(); i++) {
             classes.add(new Class(typeIds.get(i), typeNames.get(i)));
             //  filters.put(typeIds.get(i), Arrays.asList(new Filter("filters", "過濾", Arrays.asList(new Filter.Value("全部", ""), new Filter.Value("單人作品", "individual"), new Filter.Value("中文字幕", "chinese-subtitle")))));
@@ -198,9 +198,7 @@ public class Mtyy extends Spider {
         String thumb = player.getString("vod_pic_thumb");
         String urlNext = player.getString("url_next");
         String playerContent = VideoUrlParser.getVideoUrl(String.format(playUrl, url, thumb), getHeader());
-        System.out.println(playerContent);
         url = Util.findByRegex("(https?:\\/\\/[\\w\\.-]+(?:\\/[\\w\\.-]*)*\\.m3u8(?:\\?[^\\s]*)?)", playerContent, 0);
-        System.out.println(url);
         SpiderDebug.log("++++++++++++麦田-playerContent" + Json.toJson(url));
         return Result.get().url(url).header(getHeader()).string();
     }

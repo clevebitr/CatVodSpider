@@ -50,7 +50,7 @@ public class MtyyTest {
     @Test
     public void playerTest() throws Exception {
 
-        String palyer = douban.playerContent(null, "https://mtyy1.com/vodplay/190501-5-1.html", null);
+        String palyer = douban.playerContent(null, "https://mtyy2.com/vodplay/183981-2-1.html", null);
         System.out.println(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(palyer)));
 
 

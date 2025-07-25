@@ -15,6 +15,9 @@ public class VideoUrlParser {
             if (urlParam.isEmpty()) {
                 System.out.println("没有找到 url 参数");
                 return "";
+            } else if (urlParam.toLowerCase().endsWith(".m3u8")) {
+                System.out.println("请求返回的urlParam: " + urlParam);
+                return urlParam;
             }
 
             // 2. 第一次请求：获取 signed_url
@@ -25,17 +28,29 @@ public class VideoUrlParser {
             JSONObject json1 = new JSONObject(response1);
             String signedUrl = json1.getString("signed_url");
             System.out.println("signedUrl is "+signedUrl);
+
+            // 判断 signedUrl 是否为 M3u8 链接
+            if (signedUrl.toLowerCase().endsWith(".m3u8")) {
+                System.out.println("第一次请求返回的 signedUrl: " + signedUrl);
+                System.out.println("signedUrl is "+signedUrl);
+                return signedUrl;
+            }
+
             // 3. 第二次请求：使用 signed_url 获取 jmurl
             String secondUrl = apiUrl + signedUrl;
             String response2 = OkHttp.string(secondUrl, header);
-            System.out.println("response2 is "+response2);
             JSONObject json2 = new JSONObject(response2);
             String jmurl = json2.getString("jmurl");
+            System.out.println("第二次请求返回的 jmurl: " + jmurl);
 
-             //4. 第三次请求（可选）：获取最终视频地址（如果 jmurl 是跳转地址）
-//            String finalUrl = OkHttp.string(jmurl, header);
-//            System.out.println("finalUrl is "+finalUrl);
-//            return finalUrl;
+            // 判断 jmurl 是否为 HTML 链接
+            if (jmurl.toLowerCase().endsWith(".html")) {
+                // 4. 第三次请求：获取最终视频地址
+                String finalUrl = OkHttp.string(jmurl, header);
+                System.out.println("第三次请求返回的 finalUrl: " + finalUrl);
+                System.out.println("finalUrl is "+finalUrl);
+                return finalUrl;
+            }
 
             return jmurl;
 
