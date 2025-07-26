@@ -100,8 +100,6 @@ public class Mtyy extends Spider {
         StringBuilder vod_play_url = new StringBuilder();
         StringBuilder vod_play_from = new StringBuilder();
         for (int i = 0; i < sources.size(); i++) {
-
-
             String playFromText = sources.get(i).text();
             vod_play_from.append(playFromText).append("$$$");
             Element urlSource = urlSources.get(0);
