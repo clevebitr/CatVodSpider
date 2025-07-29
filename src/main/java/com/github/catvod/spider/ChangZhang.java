@@ -25,8 +25,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChangZhang extends Spider {
 
@@ -37,7 +42,7 @@ public class ChangZhang extends Spider {
         header.put("Cookie", "myannoun=1; Hm_lvt_0653ba1ead8a9aabff96252e70492497=2718862211; Hm_lvt_06341c948291d8e90aac72f9d64905b3=2718862211; Hm_lvt_07305e6f6305a01dd93218c7fe6bc9c3=2718862211; Hm_lpvt_07305e6f6305a01dd93218c7fe6bc9c3=2718867254; Hm_lpvt_06341c948291d8e90aac72f9d64905b3=2718867254; Hm_lpvt_0653ba1ead8a9aabff96252e70492497=2718867254");
         header.put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/100.0.4896.77 Mobile/15E148 Safari/604.1");
         header.put("Connection", "keep-alive");
-        header.put("Host", "www.czzyvideo.com");
+        header.put("Host", "www.czzy77.com");
         return header;
     }
 
@@ -77,7 +82,7 @@ public class ChangZhang extends Spider {
         //String filters = extend.get("filters");
         String html = OkHttp.string(target);
         Document doc = Jsoup.parse(html);
-        getVods(list,doc);
+        getVods(list, doc);
         String total = "" + Integer.MAX_VALUE;
 
 
@@ -154,38 +159,100 @@ public class ChangZhang extends Spider {
         Document document = Jsoup.parse(content);
 
         Elements iframe = document.select("iframe");
-        if(!iframe.isEmpty()){
+        System.out.println("iframe--" + iframe);
+        if (!iframe.isEmpty()) {
             String videoContent = OkHttp.string(iframe.get(0).attr("src"), Util.webHeaders(siteUrl));
             String url = Util.findByRegex("const\\s+mysvg\\s+=\\s+'(.*)'", videoContent, 1);
-//            HashMap<String, String> headers = Util.webHeaders("");
-//            headers.put(HttpHeaders.CONTENT_TYPE, VideoFormatConstants.HLS);
-            if(url.endsWith(".png")){
+            if (url.endsWith(".png")) {
                 return Result.error("无法识别的格式 png format");
-//                url = ProxyVideo.buildAdvanceCommonProxyUrl(url, Util.webHeaders(""), Map.of(HttpHeaders.CONTENT_TYPE, VideoFormatConstants.HLS));
             }
             return Result.get().m3u8().url(url).string();
-//            document = Jsoup.parse(videoContent);
-//            Elements script = document.select("script");
-//            String rand = "";
-//            String player = "";
-//            for (Element element : script) {
-//                if (StringUtils.isNoneBlank(element.data())) {
-//                    rand = Util.getVar(element.data(), "rand");
-//                    player = Util.getVar(element.data(), "player");
-//                }
-//            }
-        }else{
+        } else {
+            // 新增：检测 video 标签
+            Elements video = document.select("video");
+            System.out.println("video--" + video);
+            if (!video.isEmpty()) {
+                String url = video.get(0).attr("src");
+                if (url.endsWith(".png")) {
+                    return Result.error("无法识别的格式 png format");
+                }
+                return Result.get().m3u8().url(url).string();
+            } else {
+                System.out.println("使用解密模式");
+                String content_B = OkHttp.string(id, getHeader());
 
+                // 动态匹配加密变量：匹配var 变量名 = "超长字符串" 模式
+                // \w+ 匹配任意变量名，{200,} 确保字符串足够长（过滤短字符串变量）
+                Pattern pattern = Pattern.compile("var\\s+(\\w+)\\s*=\\s*\"([^\"]{200,})\"");
+                Matcher matcher = pattern.matcher(content_B);
+                String encryptedJs = null;
+
+                // 遍历所有匹配结果，找到能成功解密的变量
+                while (matcher.find()) {
+                    String varName = matcher.group(1);
+                    String candidateData = matcher.group(2);
+                    System.out.println("尝试解密变量: " + varName);
+
+                    // 使用已知密钥尝试解密
+                    String key = "e883aa859cb94c81";
+                    String iv = "1234567890983456";
+                    String decrypted = decryptAes(candidateData, key, iv);
+
+                    // 验证解密结果是否包含视频URL相关特征
+                    if (decrypted.contains("url") || decrypted.contains("m3u8") || decrypted.contains("dncry")) {
+                        encryptedJs = candidateData;
+                        System.out.println("找到有效加密变量: " + varName);
+                        break;
+                    }
+                }
+
+                if (encryptedJs != null) {
+                    String key = "e883aa859cb94c81";
+                    String iv = "1234567890983456";
+                    String decryptedJs = decryptAes(encryptedJs, key, iv);
+
+                    // 修复：增强正则兼容性，支持单/双引号、空格，并扩大函数名匹配范围
+                    String base64Url = Util.findByRegex("(dncry|decode|decrypt)\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)", decryptedJs, 2);
+
+                    // 备选方案：若未找到加密函数，直接搜索URL特征（如http/https开头的m3u8链接）
+                    if (base64Url == null || base64Url.isEmpty()) {
+                        System.out.println("未找到dncry函数，尝试直接提取URL...");
+                        base64Url = Util.findByRegex("(https?://[^'\"]+\\.m3u8)", decryptedJs, 1);
+                    }
+
+                    if (base64Url != null && !base64Url.isEmpty()) {
+                        // 若提取到的是直接URL（非base64），无需解码
+                        String videoUrl;
+                        if (base64Url.startsWith("http")) {
+                            videoUrl = base64Url; // 直接使用URL
+                        } else {
+                            videoUrl = new String(Base64.getDecoder().decode(base64Url), "UTF-8"); // 解码base64
+                        }
+                        System.out.println("videoUrl--" + videoUrl);
+                        return Result.get().m3u8().url(videoUrl).string();
+                    } else {
+                        return Result.error("base64Url为空");
+                    }
+                } else {
+                    return Result.error("未找到有效加密变量");
+                }
+            }
         }
-
-//        String videoInfo = cryptJs(player, "VFBTzdujpR9FWBhe", rand);
-//        JSONObject jsonElement = JSONUtil.parseObj(videoInfo);
-//        String realUrl = jsonElement.getStr("url");
-//        SpiderDebug.log("++++++++++++厂长-playerContent" + Json.toJson(realUrl));
-
-        return Result.get().url("").header(getHeader()).string();
     }
 
+
+    // AES解密方法
+    private String decryptAes(String data, String key, String iv) throws Exception {
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        byte[] ivBytes = iv.getBytes(StandardCharsets.UTF_8);
+        byte[] encryptedBytes = Base64.getDecoder().decode(data);
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new IvParameterSpec(ivBytes));
+
+        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
+    }
 
     String cryptJs(String text, String key, String iv) {
         byte[] key_value = key.getBytes(StandardCharsets.UTF_8);

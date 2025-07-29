@@ -49,7 +49,7 @@ public class ChangzhangTest {
     @Test
     public void playerTest() throws Exception {
 
-        String palyer = douban.playerContent(null, "https://www.czzyvideo.com/v_play/bXZfMjAyOTQtbm1fMQ==.html", null);
+        String palyer = douban.playerContent(null, "https://www.czzy77.com/v_play/bXZfMjA5Njktbm1fMQ==.html", null);
 //        String palyer = douban.playerContent(null, "https://www.czzyvideo.com/v_play/bXZfMTc1ODAtbm1fMQ==.html", null);
 //        String palyer = douban.playerContent(null, "https://www.czzyvideo.com/v_play/bXZfODE1OC1ubV8x.html", null);
         System.out.println(palyer);
