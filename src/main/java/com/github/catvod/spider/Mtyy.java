@@ -195,10 +195,17 @@ public class Mtyy extends Spider {
         String url = player.getString("url");
         String thumb = player.getString("vod_pic_thumb");
         String urlNext = player.getString("url_next");
-        String playerContent = VideoUrlParser.getVideoUrl(String.format(playUrl, url, thumb), getHeader());
-        url = Util.findByRegex("(https?:\\/\\/[\\w\\.-]+(?:\\/[\\w\\.-]*)*\\.m3u8(?:\\?[^\\s]*)?)", playerContent, 0);
+
+        // 获取最终的视频URL
+        String finalUrl = VideoUrlParser.getVideoUrl(String.format(playUrl, url, thumb), getHeader());
+
+        // 修复：直接使用返回的URL，不再用正则提取
+        if (finalUrl == null || finalUrl.isEmpty()) {
+            finalUrl = Util.findByRegex("(https?:\\/\\/[\\w\\.-]+(?:\\/[\\w\\.-]*)*\\.m3u8(?:\\?[^\\s]*)?)", finalUrl, 0);
+        }
+
         SpiderDebug.log("++++++++++++麦田-playerContent" + Json.toJson(url));
-        return Result.get().url(url).header(getHeader()).string();
+        return Result.get().url(finalUrl).header(getHeader()).string();
     }
 
 

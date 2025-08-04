@@ -32,7 +32,7 @@ public class Init {
 
     public static void init() {
         SpiderDebug.log("自定義爬蟲代碼載入成功！");
-        Util.notify("加载成功");
+        Util.notify("配置加载成功");
     }
 
     public static void execute(Runnable runnable) {

@@ -37,9 +37,15 @@ public class VideoUrlParser {
             }
 
             // 3. 第二次请求：使用 signed_url 获取 jmurl
-            String secondUrl = apiUrl + signedUrl;
+            String apiUrl2 = "https://mtyy2.com/static/player/art.php";
+            String secondUrl = apiUrl2 + signedUrl.replace("?url=", "?url="); // 确保URL格式正确
+
+            System.out.println("第二次请求的 secondUrl: " + secondUrl);
             String response2 = OkHttp.string(secondUrl, header);
             JSONObject json2 = new JSONObject(response2);
+
+            System.out.println("第二次请求返回的 json2: " + json2);
+
             String jmurl = json2.getString("jmurl");
             System.out.println("第二次请求返回的 jmurl: " + jmurl);
 
