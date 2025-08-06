@@ -220,11 +220,83 @@ public class HkTv extends Spider {
             url = decodeURL(decodedString);
         }
 
-            // 新增：检测并编码中文字符
+
+//        // 新增：检测特定格式的URL并进行拼接
+//        url = handleSpecialUrlFormat(url);
+
+        // 如果是特殊标识符，进行二次请求获取真实地址
+        if (url != null && url.matches("^mytv-[a-f0-9]{32}$")) {
+//            System.out.println(url);
+            url = getRealVideoUrl(url);
+        }
+
+
+        // 新增：检测并编码中文字符
         url = encodeChineseCharacters(url);
 
         return Result.get().url(url).header(getHeaders()).string();
     }
+
+    // 新增方法：处理特殊格式的URL
+    private static String handleSpecialUrlFormat(String url) {
+        // 检查是否为mytv-xxxxxx格式
+        if (url != null && url.matches("^mytv-[a-f0-9]{32}$")) {
+            return "http://111.229.219.148:808/hktvpc.php?url=" + url;
+        }
+        return url;
+    }
+
+    // 新增：通过标识符获取真实视频地址
+    private static String getRealVideoUrl(String identifier) throws Exception {
+        if (identifier == null || !identifier.matches("^mytv-[a-f0-9]{32}$")) {
+            return identifier;
+        }
+
+        String apiUrl = "http://111.229.219.148:808/hktvpc.php?url=" + identifier;
+//        System.out.println(apiUrl);
+        // 添加域名授权头信息
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", Util.CHROME);
+        headers.put("Referer", "http://www.tvyb07.com/");
+        headers.put("Host", "111.229.219.148:808");
+        headers.put("Origin", "http://www.tvyb07.com");
+
+        try {
+            // 发送二次请求获取真实视频地址
+            String response = OkHttp.string(apiUrl, headers);
+
+            // 从响应中提取真实视频地址
+            // 这里需要根据实际响应格式调整正则表达式
+            Pattern pattern = Pattern.compile("(https?://[^'\"\\s]+\\.m3u8[^'\"\\s]*)");
+            Matcher matcher = pattern.matcher(response);
+
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+
+            // 如果正则匹配失败，尝试其他可能的格式
+            String[] patterns = {
+                "\"url\":\"([^\"]+\\.m3u8[^\"]*)",
+                "\"video_url\":\"([^\"]+\\.m3u8[^\"]*)",
+                "src:\"([^\"]+\\.m3u8[^\"]*)"
+            };
+
+            for (String p : patterns) {
+                Pattern pt = Pattern.compile(p);
+                Matcher m = pt.matcher(response);
+                if (m.find()) {
+                    return m.group(1);
+                }
+            }
+
+        } catch (Exception e) {
+            // 如果二次请求失败，返回原始标识符
+            return identifier;
+        }
+
+        return identifier;
+    }
+
 
     // 新增方法：编码URL中的中文字符
     private static String encodeChineseCharacters(String url) {

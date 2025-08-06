@@ -30,7 +30,7 @@ class HkTvTest: TestInterface<HkTv> {
 
     @Test
     override fun playTest() {
-        val playerContent = t.playerContent("", "/145110/sid/4/nid/1.html", listOf())
+        val playerContent = t.playerContent("", "/146006/sid/1/nid/1.html", listOf())
         println(playerContent)
         AssertUtil.assertResult(playerContent)
     }
