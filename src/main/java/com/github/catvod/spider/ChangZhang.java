@@ -57,7 +57,7 @@ public class ChangZhang extends Spider {
         if (latestUrl != null && !latestUrl.isEmpty()) {
             this.siteUrl = latestUrl;
             SpiderDebug.log("已更新到最新地址: " + siteUrl);
-            System.out.println("已更新到最新地址: " + siteUrl);
+//            System.out.println("已更新到最新地址: " + siteUrl);
         } else {
             SpiderDebug.log("未找到最新地址，继续使用: " + siteUrl);
         }

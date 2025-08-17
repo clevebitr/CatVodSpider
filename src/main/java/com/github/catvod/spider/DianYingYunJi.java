@@ -89,7 +89,7 @@ public class DianYingYunJi extends Cloud {
     public String homeContent(boolean filter) throws IOException {
         List<Class> classes = new ArrayList<>();
         Document doc = Jsoup.parse(HttpFetcher.fetchAndDecompress(siteUrl, getHeaders()));
-        System.out.println(doc);
+//        System.out.println(doc);
         Elements elements = doc.select(" #header-navbar > li.menu-item > a");
         for (Element e : elements) {
             String url = e.attr("href");

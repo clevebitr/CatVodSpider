@@ -128,20 +128,20 @@ public class Dm84 extends Spider {
             String contentEncoding = response.header("Content-Encoding", "").trim().toLowerCase();
             byte[] rawBytes = body.bytes();
 
-            // 调试：保存原始数据到文件以便检查
+//             调试：保存原始数据到文件以便检查
             Files.write(Paths.get("raw_response.bin"), rawBytes);
-            System.out.println("Content-Encoding: " + contentEncoding);
-            System.out.println("Raw data size: " + rawBytes.length + " bytes");
+            SpiderDebug.log("Content-Encoding: " + contentEncoding);
+            SpiderDebug.log("Raw data size: " + rawBytes.length + " bytes");
 
             byte[] decompressed;
             if ("zstd".equals(contentEncoding)) {
                 try {
                     // 添加更详细的调试信息
                     long decompressedSize = Zstd.decompressedSize(rawBytes);
-                    System.out.println("Estimated decompressed size: " + decompressedSize);
+                    SpiderDebug.log("Estimated decompressed size: " + decompressedSize);
 
                     decompressed = decompressZstd(rawBytes);
-                    System.out.println("Successfully decompressed Zstd data");
+                    SpiderDebug.log("Successfully decompressed Zstd data");
                 } catch (Exception e) {
                     throw new IOException("Failed to decompress Zstd data", e);
                 }
@@ -353,12 +353,11 @@ public class Dm84 extends Spider {
                         list.add(new Vod(id, name, img, remark));
                     }
                 } catch (Exception e) {
-                    System.err.println("解析视频项失败: " + element);
-                    e.printStackTrace();
+                    SpiderDebug.log("解析视频项失败: " + element);
                 }
             }
         } catch (Exception e) {
-            System.err.println("获取分类内容失败: " + target);
+            SpiderDebug.log("获取分类内容失败: " + target);
             e.printStackTrace();
             return Result.error("获取数据失败，请检查网络或参数");
         }
@@ -396,10 +395,10 @@ public class Dm84 extends Spider {
             parsePlaySources(doc, vod);
 
         } catch (IOException e) {
-            System.err.println("获取详情页失败: " + e.getMessage());
+            SpiderDebug.log("获取详情页失败: " + e.getMessage());
             return Result.error("视频详情获取失败");
         } catch (Exception e) {
-            System.err.println("解析详情页异常: " + e.getMessage());
+            SpiderDebug.log("解析详情页异常: " + e.getMessage());
             e.printStackTrace();
             return Result.error("视频解析异常");
         }
@@ -421,7 +420,7 @@ public class Dm84 extends Spider {
         Elements playLists = doc.select("ul.play_list");
 
         if (tabControls.size() != playLists.size()) {
-            System.err.println("播放源标签与列表数量不匹配");
+            SpiderDebug.log("播放源标签与列表数量不匹配");
             return;
         }
 

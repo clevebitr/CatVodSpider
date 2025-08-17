@@ -4,6 +4,7 @@ import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Result;
 import com.github.catvod.bean.Vod;
 import com.github.catvod.crawler.Spider;
+import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import org.jsoup.Jsoup;
@@ -75,7 +76,7 @@ public class QxiTv extends Spider {
             }
 
             // 输出加密后的 MD5 字符串
-            System.out.println("MD5 加密: " + hexString.toString());
+            SpiderDebug.log("MD5 加密: " + hexString);
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();

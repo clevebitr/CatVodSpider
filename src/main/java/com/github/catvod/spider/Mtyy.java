@@ -39,6 +39,21 @@ public class Mtyy extends Spider {
     private Map<String, String> getHeader() {
         Map<String, String> header = new HashMap<>();
         header.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        header.put("Referer", siteUrl);
+        header.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        header.put("Accept-Encoding", "gzip, deflate, br, zstd");
+        header.put("Accept-Language", "zh-CN,zh;q=0.9");
+        header.put("Cache-Control", "max-age=0");
+        header.put("Connection", "keep-alive");
+        header.put("Upgrade-Insecure-Requests", "1");
+        header.put("Sec-Ch-Ua", "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"");
+        header.put("Sec-Ch-Ua-Mobile", "?0");
+        header.put("Sec-Ch-Ua-Platform", "\"Windows\"");
+        header.put("Sec-Fetch-Dest", "document");
+        header.put("Sec-Fetch-Mode", "navigate");
+        header.put("Sec-Fetch-Site", "none");
+        header.put("Sec-Fetch-User", "?1");
+        header.put("cookie", "");
         return header;
     }
 
@@ -48,7 +63,15 @@ public class Mtyy extends Spider {
         List<Vod> list = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
-        Document doc = Jsoup.parse(OkHttp.string(siteUrl));
+        Document doc = Jsoup.parse(OkHttp.string(siteUrl, getHeader()));
+        String html = OkHttp.string(siteUrl, getHeader());
+        System.out.println("原始HTML内容：" + html); // 检查是否包含预期数据
+        try {
+            Response response = OkHttp.newCall(siteUrl, getHeader());
+            System.out.println("状态码：" + response.code()); // 200为正常
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         List<String> typeNames = Arrays.asList("连续剧", "电影", "综艺", "动漫", "短剧");
         List<String> typeIds = Arrays.asList("2", "1", "3", "4", "26");
         for (int i = 0; i < typeIds.size(); i++) {

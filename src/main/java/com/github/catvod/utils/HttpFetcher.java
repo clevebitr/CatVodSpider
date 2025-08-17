@@ -1,5 +1,6 @@
 package com.github.catvod.utils;
 
+import com.github.catvod.crawler.SpiderDebug;
 import okhttp3.*;
 
 import java.io.*;
@@ -45,17 +46,17 @@ public class HttpFetcher {
 
             // 调试：保存原始数据到文件以便检查
             Files.write(Paths.get("raw_response.bin"), rawBytes);
-            System.out.println("Content-Encoding: " + contentEncoding);
-            System.out.println("Raw data size: " + rawBytes.length + " bytes");
+            SpiderDebug.log("Content-Encoding: " + contentEncoding);
+            SpiderDebug.log("Raw data size: " + rawBytes.length + " bytes");
 
             byte[] decompressed;
             if ("zstd".equals(contentEncoding)) {
                 try {
                     long decompressedSize = Zstd.decompressedSize(rawBytes);
-                    System.out.println("Estimated decompressed size: " + decompressedSize);
+                    SpiderDebug.log("Estimated decompressed size: " + decompressedSize);
 
                     decompressed = decompressZstd(rawBytes);
-                    System.out.println("Successfully decompressed Zstd data");
+                    SpiderDebug.log("Successfully decompressed Zstd data");
                 } catch (Exception e) {
                     throw new IOException("Failed to decompress Zstd data", e);
                 }

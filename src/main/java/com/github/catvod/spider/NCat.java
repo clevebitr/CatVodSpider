@@ -28,7 +28,7 @@ public class NCat extends Spider {
     private static final String siteUrl = "https://www.ncat3.app";
 
     //    private static final String siteUrl = "https://www.ncat3.com:51111";
-    private static final String picUrl = "https://vres.wbadl.cn";
+    private static final String picUrl = "https://vres.cfaqcgj.com";
     private static final String cateUrl = siteUrl + "/show/";
     private static final String detailUrl = siteUrl + "/detail/";
     private static final String searchUrl = siteUrl + "/search?os=pc&k=";
@@ -63,16 +63,24 @@ public class NCat extends Spider {
         Document doc = Jsoup.parse(OkHttp.string(link, getHeaders()));
         for (Element element : doc.select("div.module-item > a.v-item")) {
             try {
-                String pic = picUrl + element.select("img:not([id])").attr("data-original");
+                String imgSrc = element.select("img:not([id])").attr("data-original");
+                if (imgSrc.isEmpty()) {
+                    imgSrc = element.select("img:not([id])").attr("src");
+                }
+
+                String pic;
+                if (imgSrc.startsWith("http")) {
+                    pic = imgSrc;
+                } else {
+                    pic = picUrl + (imgSrc.startsWith("/") ? imgSrc : "/" + imgSrc);
+                }
+
                 String url = element.select("a").attr("href");
                 String name = element.select("div[class=v-item-title]:not([style])").text();
-                if (!pic.startsWith("http")) {
-                    pic = picUrl + pic;
-                }
                 String id = url.split("/")[2];
                 list.add(new Vod(id, name, pic));
             } catch (Exception e) {
-
+                SpiderDebug.log("解析视频信息失败: " + e.getMessage());
             }
         }
         return list;
@@ -86,6 +94,12 @@ public class NCat extends Spider {
         String year = doc.select("a.detail-tags-item").get(0).text();
         String desc = doc.select("div.detail-desc p").text();
 
+        if (pic.isEmpty()) {
+            pic = doc.select(".detail-pic img").attr("src");
+        }
+        if (!pic.startsWith("http")) {
+            pic = picUrl + pic;
+        }
         // 播放源
         Elements tabs = doc.select("a.source-item span");
         Elements list = doc.select("div.episode-list");
