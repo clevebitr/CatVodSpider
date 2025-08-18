@@ -30,7 +30,6 @@ public class Cloud extends Spider {
         uc.init(ext.has("uccookie") ? ext.get("uccookie").getAsString() : "");
         quark.init(ext.has("cookie") ? ext.get("cookie").getAsString() : "");
         ali.init(ext.has("token") ? ext.get("token").getAsString() : "");
-
     }
 
     @Override
@@ -58,33 +57,42 @@ public class Cloud extends Spider {
 
     protected String detailContentVodPlayFrom(List<String> shareLinks) {
         List<String> from = new ArrayList<>();
-        int i =0;
+        int i = 0;
         for (String shareLink : shareLinks) {
             i++;
-            if (shareLink.matches(patternUC)) {
-                from.add(uc.detailContentVodPlayFrom(ImmutableList.of(shareLink), i));
-            } else if (shareLink.matches(patternQuark)) {
-                from.add(quark.detailContentVodPlayFrom(ImmutableList.of(shareLink)));
-            } else if (shareLink.matches(Ali.pattern.pattern())) {
-                from.add(ali.detailContentVodPlayFrom(ImmutableList.of(shareLink)));
+            try {
+                if (shareLink.matches(patternUC) && uc != null) {
+                    from.add(uc.detailContentVodPlayFrom(ImmutableList.of(shareLink), i));
+                } else if (shareLink.matches(patternQuark) && quark != null) {
+                    from.add(quark.detailContentVodPlayFrom(ImmutableList.of(shareLink)));
+                } else if (shareLink.matches(Ali.pattern.pattern()) && ali != null) {
+                    from.add(ali.detailContentVodPlayFrom(ImmutableList.of(shareLink)));
+                } else {
+                    from.add("网盘未配置");
+                }
+            } catch (Exception e) {
+                from.add("解析失败");
             }
         }
-
-
-
         return StringUtils.join(from, "$$$");
     }
 
     protected String detailContentVodPlayUrl(List<String> shareLinks) throws Exception {
         List<String> urls = new ArrayList<>();
         for (String shareLink : shareLinks) {
-            if (shareLink.matches(Ali.pattern.pattern())) {
-                urls.add(ali.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
-            } else if (shareLink.matches(patternQuark)) {
-                urls.add(quark.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
-            } else if (shareLink.matches(patternUC)) {
-                urls.add(uc.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
-            }
+//            try {
+                if (shareLink.matches(Ali.pattern.pattern()) && ali != null) {
+                    urls.add(ali.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
+                } else if (shareLink.matches(patternQuark) && quark != null) {
+                    urls.add(quark.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
+                } else if (shareLink.matches(patternUC) && uc != null) {
+                    urls.add(uc.detailContentVodPlayUrl(ImmutableList.of(shareLink)));
+                } else {
+                    urls.add("http://error.com/网盘未配置");
+                }
+//            } catch (Exception e) {
+//                urls.add("http://error.com/解析失败: " + e.getMessage());
+//            }
         }
         return StringUtils.join(urls, "$$$");
     }

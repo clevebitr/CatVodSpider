@@ -12,6 +12,7 @@ import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -276,32 +277,84 @@ public class UCTokenHandler {
                 BufferedImage bitmap = QRCode.base64StringToImage(base64Str);
                 JPanel jPanel = new JPanel();
                 jPanel.setSize(Swings.dp2px(size), Swings.dp2px(size));
-                jPanel.add(new JLabel(new ImageIcon(bitmap)));
-                dialog = Util.showDialog(jPanel, "请使用uc网盘App扫描");
-//                dialog.addComponentListener();
+                jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+                jPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // 增加边距
+                jPanel.setBackground(Color.darkGray);
+
+                // 添加标题
+                JLabel titleLabel = new JLabel("LumenTV-请使用uc浏览器扫描");
+                titleLabel.setAlignmentX(JLabel.CENTER);
+                titleLabel.setBackground(Color.DARK_GRAY);
+                titleLabel.setForeground(Color.white);
+                titleLabel.setFont(titleLabel.getFont().deriveFont(18.0f)); // 增大字体
+                jPanel.add(titleLabel);
+
+                // 添加二维码图片
+                JLabel imageLabel = new JLabel(new ImageIcon(bitmap));
+                imageLabel.setAlignmentX(JLabel.CENTER);
+                jPanel.add(imageLabel);
+
+                // 添加取消按钮
+                JButton cancelButton = new JButton("取消");
+                cancelButton.setAlignmentX(JButton.CENTER);
+                cancelButton.setFont(cancelButton.getFont().deriveFont(16.0f)); // 增大字体
+                cancelButton.setPreferredSize(new Dimension(100, 40)); // 设置按钮大小
+                cancelButton.addActionListener((event) -> {
+                    // 取消扫码并停止服务
+                    cancelScan();
+                    if (dialog != null) {
+                        dialog.setVisible(false);
+                        dialog.dispose();
+                    }
+                });
+                jPanel.add(Box.createVerticalStrut(10)); // 添加垂直间距
+                jPanel.add(cancelButton);
+
+                // 创建并配置对话框
+                dialog = new JDialog((Frame) null);
+                dialog.setUndecorated(true);
+                dialog.setContentPane(jPanel);
+                dialog.pack();
+                dialog.setLocationRelativeTo(null);
+                dialog.setLocation(Swings.getCenter(jPanel.getWidth(), jPanel.getHeight()));
+                dialog.setVisible(true);
             });
-            Util.notify("请使用uc网盘App扫描二维码");
+            Util.notify("请使用uc浏览器扫描二维码");
         } catch (Exception ignored) {
         }
     }
+
 
     private void stopService() {
         if (service != null) {
             SpiderDebug.log("uc线程池关闭");
             service.shutdownNow();
-            dialog.dispose();
+            service = null;
+            if (dialog != null) {
+                dialog.dispose();
+            }
         }
     }
 
     public void startService() {
         SpiderDebug.log("----start UC token  service");
 
+        if (service != null && !service.isShutdown()) {
+            stopService();
+        }
+
         service = Executors.newScheduledThreadPool(1);
 
         service.scheduleWithFixedDelay(() -> {
             try {
-                SpiderDebug.log("----checkUC_TOKENStatus中");
+                // 检查是否还有UC_TOKEN状态，如果没有则停止服务
+                if (!platformStates.containsKey("UC_TOKEN")) {
+                    SpiderDebug.log("----UC_TOKEN状态已移除，停止检查");
+                    stopService();
+                    return;
+                }
 
+                SpiderDebug.log("----checkUC_TOKENStatus中");
                 checkUC_TOKENStatus();
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
@@ -310,4 +363,8 @@ public class UCTokenHandler {
         }, 1, 3, TimeUnit.SECONDS);
     }
 
+    public void cancelScan() {
+        platformStates.remove("UC_TOKEN");
+        stopService();
+    }
 }

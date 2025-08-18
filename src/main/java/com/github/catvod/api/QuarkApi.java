@@ -36,7 +36,7 @@ public class QuarkApi {
     private List<String> subtitleExts = Arrays.asList(".srt", ".ass", ".scc", ".stl", ".ttml");
     private Map<String, String> saveFileIdCaches = new HashMap<>();
     private String saveDirId = null;
-    private String saveDirName = "TV";
+    private String saveDirName = "Lumen TV Temp";
     private boolean isVip = false;
     private final Cache cache;
     private ScheduledExecutorService service;
@@ -154,6 +154,7 @@ public class QuarkApi {
         List<Map<String, Object>> listData = listFile(1, shareData, files, subs, shareData.getShareId(), shareData.getFolderId(), 1);
 
         List<String> playFrom = QuarkApi.get().getPlayFormatList();
+        SpiderDebug.log("playFrom:" + playFrom);
         List<String> playFromtmp = new ArrayList<>();
         playFromtmp.add("quark原画");
         for (String s : playFrom) {
@@ -163,6 +164,7 @@ public class QuarkApi {
         List<String> playUrl = new ArrayList<>();
 
         if (files.isEmpty()) {
+            SpiderDebug.log("Files list is empty!");
             return null;
         }
         for (int i = 0; i < files.get(files.size() - 1).getShareIndex(); i++) {
@@ -170,7 +172,7 @@ public class QuarkApi {
                 List<String> vodItems = new ArrayList<>();
                 for (Item video_item : files) {
                     if (video_item.getShareIndex() == i + 1) {
-                        vodItems.add(video_item.getEpisodeUrl("电影"));// + findSubs(video_item.getName(), subs));
+                        vodItems.add(video_item.getEpisodeUrl("电影")); // + findSubs(video_item.getName(), subs));
                     }
                 }
                 playUrl.add(StringUtils.join(vodItems, "#"));
@@ -198,6 +200,10 @@ public class QuarkApi {
         } else {
             playUrl = this.getLiveTranscoding(shareId, stoken, fileId, fileToken, flag);
         }
+        if (StringUtils.isBlank(playUrl)) {
+            SpiderDebug.log("获取播放地址失败!");
+            return "";
+        }
         Map<String, String> header = getHeaders();
         header.remove("Host");
         header.remove("Content-Type");
@@ -205,6 +211,9 @@ public class QuarkApi {
     }
 
     private String proxyVideoUrl(String url, Map<String, String> header) {
+        if (url == null || url.isEmpty()) {
+            throw new IllegalArgumentException("proxyVideoUrl: 传入的 str 为空");
+        }
         return String.format(Proxy.getProxyUrl() + "?do=quark&type=video&url=%s&header=%s", Util.base64Encode(url), Util.base64Encode(Json.toJson(header)));
     }
 
@@ -391,6 +400,11 @@ public class QuarkApi {
         int prePage = 200;
         page = page != null ? page : 1;
 
+        // 添加空值检查，确保shareTokenCache中有对应的shareId
+        if (!this.shareTokenCache.containsKey(shareId)) {
+            return Collections.emptyList();
+        }
+
         Map<String, Object> listData = Json.parseSafe(api("share/sharepage/detail?" + this.pr + "&pwd_id=" + shareId + "&stoken=" + encodeURIComponent((String) this.shareTokenCache.get(shareId).get("stoken")) + "&pdir_fid=" + folderId + "&force=0&_page=" + page + "&_size=" + prePage + "&_sort=file_type:asc,file_name:asc", Collections.emptyMap(), Collections.emptyMap(), 0, "GET"), Map.class);
         if (listData.get("data") == null) return Collections.emptyList();
         List<Map<String, Object>> items = (List<Map<String, Object>>) ((Map<String, Object>) listData.get("data")).get("list");
@@ -549,38 +563,108 @@ public class QuarkApi {
     }
 
     private String save(String shareId, String stoken, String fileId, String fileToken, boolean clean) throws Exception {
+        SpiderDebug.log("转存文件 -> shareId=" + shareId + ", fileId=" + fileId + ", fileToken=" + fileToken);
         createSaveDir(clean);
         if (clean) {
             clean();
         }
-        if (this.saveDirId == null) return null;
+
+        if (this.saveDirId == null) {
+            SpiderDebug.log("saveDirId 为 null，无法创建目录");
+            return null;
+        }
+        SpiderDebug.log("saveDirId=" + this.saveDirId);
+
         if (stoken == null) {
+            SpiderDebug.log("stoken 为 null，尝试获取");
             getShareToken(new ShareData(shareId, null));
-            if (!this.shareTokenCache.containsKey(shareId)) return null;
+            if (!this.shareTokenCache.containsKey(shareId)) {
+                SpiderDebug.log("shareTokenCache 中未找到 shareId=" + shareId);
+                return null;
+            }
+            stoken = (String) this.shareTokenCache.get(shareId).get("stoken");
+            SpiderDebug.log("获取到 stoken=" + stoken);
         }
 
-        Map<String, Object> saveResult = Json.parseSafe(api("share/sharepage/save?" + this.pr, null, ImmutableMap.of("fid_list", ImmutableList.of(fileId), "fid_token_list", ImmutableList.of(fileToken), "to_pdir_fid", this.saveDirId, "pwd_id", shareId, "stoken", stoken != null ? stoken : (String) this.shareTokenCache.get(shareId).get("stoken"), "pdir_fid", "0", "scene", "link"), 0, "POST"), Map.class);
+        // ===== 转存请求参数 =====
+        SpiderDebug.log("转存请求参数 -> shareId=" + shareId + ", stoken=" + stoken + ", fileId=" + fileId + ", fileToken=" + fileToken + ", saveDirId=" + saveDirId);
+
+        Map<String, Object> params = ImmutableMap.of(
+                "fid_list", ImmutableList.of(fileId),
+                "fid_token_list", ImmutableList.of(fileToken),
+                "to_pdir_fid", this.saveDirId,
+                "pwd_id", shareId,
+                "stoken", stoken,
+                "pdir_fid", "0",
+                "scene", "link"
+        );
+        SpiderDebug.log("转存请求参数Map=" + params);
+
+        Map<String, Object> saveResult = Json.parseSafe(api("share/sharepage/save?" + this.pr, null, params, 0, "POST"), Map.class);
+
+        // ===== 打印接口返回 =====
+        SpiderDebug.log("转存接口返回 -> " + saveResult);
+
         if (saveResult.get("data") != null && ((Map<Object, Object>) saveResult.get("data")).get("task_id") != null) {
+            String taskId = (String) ((Map<String, Object>) saveResult.get("data")).get("task_id");
+            SpiderDebug.log("获取到 task_id=" + taskId);
             int retry = 0;
             while (true) {
+                SpiderDebug.log("第" + (retry + 1) + "次轮询任务状态, task_id=" + taskId);
+                Map<String, Object> taskResult = Json.parseSafe(api("task?" + this.pr + "&task_id=" + taskId + "&retry_index=" + retry, Collections.emptyMap(), Collections.emptyMap(), 0, "GET"), Map.class);
+                SpiderDebug.log("任务状态返回: " + taskResult);
 
-                Map<String, Object> taskResult = Json.parseSafe(api("task?" + this.pr + "&task_id=" + ((Map<String, Object>) saveResult.get("data")).get("task_id") + "&retry_index=" + retry, Collections.emptyMap(), Collections.emptyMap(), 0, "GET"), Map.class);
-                if (taskResult.get("data") != null && ((Map<Object, Object>) taskResult.get("data")).get("save_as") != null && ((Map<Object, Object>) ((Map<Object, Object>) taskResult.get("data")).get("save_as")).get("save_as_top_fids") != null && ((List<String>) ((Map<String, Object>) ((Map<String, Object>) taskResult.get("data")).get("save_as")).get("save_as_top_fids")).size() > 0) {
-                    return ((List<String>) ((Map<String, Object>) ((Map<Object, Object>) taskResult.get("data")).get("save_as")).get("save_as_top_fids")).get(0);
+                if (taskResult.get("data") != null) {
+                    Map<Object, Object> data = (Map<Object, Object>) taskResult.get("data");
+                    if (data.get("save_as") != null) {
+                        Map<Object, Object> saveAs = (Map<Object, Object>) data.get("save_as");
+                        if (saveAs.get("save_as_top_fids") != null) {
+                            List<String> fids = (List<String>) saveAs.get("save_as_top_fids");
+                            if (fids.size() > 0) {
+                                String saveFileId = fids.get(0);
+                                SpiderDebug.log("转存成功，saveFileId=" + saveFileId);
+                                return saveFileId;
+                            } else {
+                                SpiderDebug.log("save_as_top_fids 列表为空");
+                            }
+                        } else {
+                            SpiderDebug.log("save_as_top_fids 为 null");
+                        }
+                    } else {
+                        SpiderDebug.log("save_as 为 null");
+                    }
+                } else {
+                    SpiderDebug.log("data 为 null");
                 }
+
                 retry++;
-                if (retry > 2) break;
+                if (retry > 2) {
+                    SpiderDebug.log("轮询超时，retry=" + retry);
+                    break;
+                }
                 Thread.sleep(1000);
             }
+        } else {
+            SpiderDebug.log("转存接口返回中没有 task_id");
         }
         return null;
     }
 
+
     private String getLiveTranscoding(String shareId, String stoken, String fileId, String fileToken, String flag) throws Exception {
+        SpiderDebug.log("获取转码地址 -> shareId=" + shareId + ", stoken=" + stoken + ", fileId=" + fileId + ", fileToken=" + fileToken + ", flag=" + flag);
         if (!this.saveFileIdCaches.containsKey(fileId)) {
+            SpiderDebug.log("文件未转存，开始执行转存操作: shareId=" + shareId + ", stoken=" + stoken + ", fileId=" + fileId + ", fileToken=" + fileToken);
             String saveFileId = save(shareId, stoken, fileId, fileToken, true);
-            if (saveFileId == null) return null;
+            SpiderDebug.log("转存操作完成，saveFileId=" + saveFileId);
+            if (saveFileId == null) {
+                SpiderDebug.log("转存失败，saveFileId为null");
+                return null;
+            }
             this.saveFileIdCaches.put(fileId, saveFileId);
+            SpiderDebug.log("转存成功，已将saveFileId存入缓存: " + saveFileId);
+        } else {
+            SpiderDebug.log("文件已转存，从缓存中获取saveFileId");
         }
 
         Map<String, Object> transcoding = Json.parseSafe(api("file/v2/play?" + this.pr, Collections.emptyMap(), ImmutableMap.of("fid", this.saveFileIdCaches.get(fileId), "resolutions", "normal,low,high,super,2k,4k", "supports", "fmp4"), 0, "POST"), Map.class);
@@ -605,6 +689,9 @@ public class QuarkApi {
             this.saveFileIdCaches.put(fileId, saveFileId);
         }
         Map<String, Object> down = Json.parseSafe(api("file/download?" + this.pr + "&uc_param_str=", Collections.emptyMap(), ImmutableMap.of("fids", this.saveFileIdCaches.get(fileId)), 0, "POST"), Map.class);
+
+        System.out.println("[DEBUG] download JSON = " + down);
+
         if (down.get("data") != null) {
             return ((List<String>) down.get("data")).get(0);
         }
@@ -634,7 +721,6 @@ public class QuarkApi {
     }
 
     private void showInput() {
-
         try {
             JPanel jPanel = new JPanel();
             jPanel.setSize(Swings.dp2px(200), Swings.dp2px(80));

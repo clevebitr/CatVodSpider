@@ -306,7 +306,7 @@ public class Util {
         }).start();
     }
 
-    private static EmptyBorder getBorder(int size) {
+    public static EmptyBorder getBorder(int size) {
         int i = Swings.dp2px(size);
         return new EmptyBorder(i, i, i, i);
     }
@@ -426,8 +426,10 @@ public class Util {
     }
 
     public static String base64Encode(String str) {
+        if (str == null) return "";
         return new String(Base64.getEncoder().encode(str.getBytes()));
     }
+
 
     public static String base64Encode(byte[] str) {
         return new String(Base64.getEncoder().encode(str));
