@@ -13,6 +13,8 @@ class PttTest : TestInterface<PTT> {
     @Test
     override fun homeTest() {
         // 无
+        val homeContent = t.homeContent(true)
+        assert(homeContent)
     }
 
     @Test
@@ -29,7 +31,7 @@ class PttTest : TestInterface<PTT> {
 
     @Test
     override fun detailTest() {
-        val detailContent = t.detailContent(listOf("487442"))
+        val detailContent = t.detailContent(listOf("527835"))
 //        val detailContent = t.detailContent(listOf("143878"))
         assert(detailContent)
     }

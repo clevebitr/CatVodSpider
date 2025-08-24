@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//反爬更新，需要滑动滑块
 public class HkTv extends Spider {
 
     private static String siteUrl = "http://www.tvyb07.com";
@@ -62,6 +62,7 @@ public class HkTv extends Spider {
             classes.add(new Class(typeIdList[i], typeNameList[i]));
         }
         Document doc = Jsoup.parse(OkHttp.string(siteUrl, getHeaders()));
+        System.out.println(doc);
         for (Element element : doc.select("a.myui-vodlist__thumb")) {
             try {
                 String pic = element.attr("data-original");

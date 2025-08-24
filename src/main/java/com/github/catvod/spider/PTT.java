@@ -73,31 +73,79 @@ public class PTT extends Spider {
 
     @Override
     public String detailContent(List<String> ids) throws Exception {
+        // Parse the page content using Jsoup
         Document doc = Jsoup.parse(OkHttp.string(url + ids.get(0), getHeader()));
+
+        // Store flags from the tab links (剧集)
         LinkedHashMap<String, String> flags = new LinkedHashMap<>();
         List<String> playUrls = new ArrayList<>();
+
+        // Parse the tab links (<ul id="w1">) for series titles and their corresponding hrefs
         for (Element a : doc.select("ul#w1 > li > a")) {
-            flags.put(a.attr("href").split("/")[3], a.attr("title"));
+            String flag = a.attr("href").split("/")[3];  // Extract flag (e.g., "臥龍", "瀟雲", etc.)
+            String title = a.attr("title");
+            flags.put(flag, title);
         }
+
+        // Parse the sequence links (<a class="seq border">) for episode numbers
         Elements items = doc.select("div > a.seq.border");
         for (String flag : flags.keySet()) {
             List<String> urls = new ArrayList<>();
-            for (Element e : items)
-                urls.add(e.text() + "$" + ids.get(0) + "/" + e.attr("href").split("/")[2] + "/" + flag);
-            if (urls.isEmpty()) urls.add("1$" + ids.get(0) + "/1/" + flag);
+
+            // For each flag, iterate over all the episode links and create the URL
+            for (Element e : items) {
+                String episodeNumber = e.text();  // Episode number (e.g., "1", "2", etc.)
+                String episodeUrl = ids.get(0) + "/" + e.attr("href").split("/")[2] + "/" + flag;
+                urls.add(episodeNumber + "$" + episodeUrl);
+            }
+
+            // If there are no URLs, add a default episode
+            if (urls.isEmpty()) {
+                urls.add("1$" + ids.get(0) + "/1/" + flag);
+            }
+
+            // Add the formatted URLs to the playUrls list
             playUrls.add(Util.stringJoin("#", urls));
         }
+
+        // Collect additional information for Vod
+        String vodId = ids.get(0);
+        String vodPic = "https://example.com/thumbnail.jpg";  // Example, should be scraped from page
+        String vodYear = "不详";  // Example, should be scraped from page
+        String vodContent = "暂无简介";  // Example description
+        String vodTag = "暂无";  // Example, should be scraped from page
+        Elements breadcrumbItems = doc.select("ol#w0 .breadcrumb-item a");
+        String regionName = breadcrumbItems.get(2).text();  // 获取大陆链接
+        String dramaName = breadcrumbItems.get(3).text();  // 获取剧集名称
+
+        // Create a Vod object and set its properties
         Vod vod = new Vod();
-        vod.setVodPlayFrom(Util.stringJoin("$$$", flags.values()));
-        vod.setVodPlayUrl(Util.stringJoin("$$$", playUrls));
+        vod.setVodId(vodId);
+        vod.setVodName(dramaName);
+        vod.setVodPic(vodPic);
+        vod.setVodYear(vodYear);
+        vod.setVodArea(regionName);
+        vod.setVodContent(vodContent);
+        vod.setVodTag(vodTag);
+        vod.setVodPlayFrom(Util.stringJoin("$$$", flags.values()));  // Flags for series titles
+        vod.setVodPlayUrl(Util.stringJoin("$$$", playUrls));  // Sequence URLs for each episode
+
+        // Return the result as a string in JSON format
         return Result.string(vod);
+    }
+
+
+    private HashMap<String, String> getHeaders() {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", Util.CHROME);
+        return headers;
     }
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
         Matcher m = Pattern.compile("contentUrl\":\"(.*?)\"").matcher(OkHttp.string(url + id));
-        if (m.find()) return Result.get().url(m.group(1).replace("\\", "")).string();
-        return Result.error("");
+        if (m.find()) return Result.get().url(m.group(1).replace("\\", "")).header(getHeaders()).string();
+        return Result.error("url error:" + url + id);
     }
 
     @Override
