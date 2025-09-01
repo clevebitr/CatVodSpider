@@ -41,7 +41,7 @@ public class Mtyy extends Spider {
         header.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
         header.put("Referer", siteUrl);
         header.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-        header.put("Accept-Encoding", "gzip, deflate, br, zstd");
+        header.put("Accept-Encoding", "deflate, br, zstd");
         header.put("Accept-Language", "zh-CN,zh;q=0.9");
         header.put("Cache-Control", "max-age=0");
         header.put("Connection", "keep-alive");
@@ -65,10 +65,10 @@ public class Mtyy extends Spider {
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         Document doc = Jsoup.parse(OkHttp.string(siteUrl, getHeader()));
         String html = OkHttp.string(siteUrl, getHeader());
-        System.out.println("原始HTML内容：" + html); // 检查是否包含预期数据
+//        System.out.println("原始HTML内容：" + html); // 检查是否包含预期数据
         try {
             Response response = OkHttp.newCall(siteUrl, getHeader());
-            System.out.println("状态码：" + response.code()); // 200为正常
+//            System.out.println("状态码：" + response.code()); // 200为正常
         } catch (IOException e) {
             e.printStackTrace();
         }
