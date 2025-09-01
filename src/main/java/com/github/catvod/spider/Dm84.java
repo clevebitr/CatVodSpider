@@ -131,14 +131,14 @@ public class Dm84 extends Spider {
 //             调试：保存原始数据到文件以便检查
             Files.write(Paths.get("raw_response.bin"), rawBytes);
             SpiderDebug.log("Content-Encoding: " + contentEncoding);
-            SpiderDebug.log("Raw data size: " + rawBytes.length + " bytes");
+            //SpiderDebug.log("Raw data size: " + rawBytes.length + " bytes");
 
             byte[] decompressed;
             if ("zstd".equals(contentEncoding)) {
                 try {
                     // 添加更详细的调试信息
                     long decompressedSize = Zstd.decompressedSize(rawBytes);
-                    SpiderDebug.log("Estimated decompressed size: " + decompressedSize);
+                    //SpiderDebug.log("Estimated decompressed size: " + decompressedSize);
 
                     decompressed = decompressZstd(rawBytes);
                     SpiderDebug.log("Successfully decompressed Zstd data");
